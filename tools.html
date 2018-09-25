@@ -1,0 +1,340 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Input/Output &mdash; eSCAPE v.1.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Mesher" href="mesher.html" />
+    <link rel="prev" title="eSCAPE’s documentation" href="index.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> eSCAPE
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Input/Output</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-eSCAPE.tools.inputparser">Input functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-eSCAPE.tools.outmesh">Output functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mesher.html">Mesher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flow.html">Landscape evolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pit.html">Pit filling</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/eSCAPE.mesher.html">eSCAPE.mesher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/eSCAPE.flow.html">eSCAPE.flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/eSCAPE.pit.html">eSCAPE.pit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/eSCAPE.tools.html">eSCAPE.tools</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">eSCAPE</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Input/Output</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/tools.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="input-output">
+<h1>Input/Output<a class="headerlink" href="#input-output" title="Permalink to this headline">¶</a></h1>
+<dl class="docutils">
+<dt>Declaration of input/output functions to:</dt>
+<dd><ul class="first last simple">
+<li>parse the YAML input file</li>
+<li>write HDF5 output of computed surface parameters</li>
+</ul>
+</dd>
+</dl>
+<span class="target" id="module-eSCAPE.tools"></span><div class="section" id="module-eSCAPE.tools.inputparser">
+<span id="input-functions"></span><h2>Input functions<a class="headerlink" href="#module-eSCAPE.tools.inputparser" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="eSCAPE.tools.inputparser.ReadYaml">
+<em class="property">class </em><code class="descclassname">eSCAPE.tools.inputparser.</code><code class="descname">ReadYaml</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/inputparser.html#ReadYaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.inputparser.ReadYaml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Parsing YAML input file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> – input filename (.yml YAML file)</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="eSCAPE.tools.inputparser.ReadYaml._readDomain">
+<code class="descname">_readDomain</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/inputparser.html#ReadYaml._readDomain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.inputparser.ReadYaml._readDomain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read domain definition, boundary conditions and flow direction parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="eSCAPE.tools.inputparser.ReadYaml._readHillslope">
+<code class="descname">_readHillslope</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/inputparser.html#ReadYaml._readHillslope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.inputparser.ReadYaml._readHillslope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read hillslope parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="eSCAPE.tools.inputparser.ReadYaml._readOut">
+<code class="descname">_readOut</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/inputparser.html#ReadYaml._readOut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.inputparser.ReadYaml._readOut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse output directory.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="eSCAPE.tools.inputparser.ReadYaml._readRain">
+<code class="descname">_readRain</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/inputparser.html#ReadYaml._readRain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.inputparser.ReadYaml._readRain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse rain forcing conditions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="eSCAPE.tools.inputparser.ReadYaml._readSPL">
+<code class="descname">_readSPL</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/inputparser.html#ReadYaml._readSPL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.inputparser.ReadYaml._readSPL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read stream power law parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="eSCAPE.tools.inputparser.ReadYaml._readSealevel">
+<code class="descname">_readSealevel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/inputparser.html#ReadYaml._readSealevel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.inputparser.ReadYaml._readSealevel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define sealevel evolution.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="eSCAPE.tools.inputparser.ReadYaml._readTectonic">
+<code class="descname">_readTectonic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/inputparser.html#ReadYaml._readTectonic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.inputparser.ReadYaml._readTectonic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse tectonic forcing conditions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="eSCAPE.tools.inputparser.ReadYaml._readTime">
+<code class="descname">_readTime</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/inputparser.html#ReadYaml._readTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.inputparser.ReadYaml._readTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read simulation time declaration.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-eSCAPE.tools.outmesh">
+<span id="output-functions"></span><h2>Output functions<a class="headerlink" href="#module-eSCAPE.tools.outmesh" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="eSCAPE.tools.outmesh.WriteMesh">
+<em class="property">class </em><code class="descclassname">eSCAPE.tools.outmesh.</code><code class="descname">WriteMesh</code><span class="sig-paren">(</span><em>loclen=None</em>, <em>coords=None</em>, <em>dx=None</em>, <em>dy=None</em>, <em>lcells=None</em>, <em>lcoords=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/outmesh.html#WriteMesh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.outmesh.WriteMesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Output model paramters using hdf5 library</p>
+<dl class="method">
+<dt id="eSCAPE.tools.outmesh.WriteMesh._save_DMPlex_XMF">
+<code class="descname">_save_DMPlex_XMF</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/outmesh.html#WriteMesh._save_DMPlex_XMF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.outmesh.WriteMesh._save_DMPlex_XMF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves mesh local information stored in the HDF5 to XMF file
+to visualise in Paraview.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="eSCAPE.tools.outmesh.WriteMesh._save_DMPlex_local_hdf5">
+<code class="descname">_save_DMPlex_local_hdf5</code><span class="sig-paren">(</span><em>remesh</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/outmesh.html#WriteMesh._save_DMPlex_local_hdf5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.outmesh.WriteMesh._save_DMPlex_local_hdf5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves mesh local information stored in the DMPlex to HDF5 file
+If the file already exists, it is overwritten.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="eSCAPE.tools.outmesh.WriteMesh._save_XDMF">
+<code class="descname">_save_XDMF</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/outmesh.html#WriteMesh._save_XDMF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.outmesh.WriteMesh._save_XDMF" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function writes the XDmF file which is calling the XmF file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="eSCAPE.tools.outmesh.WriteMesh.create_OutputDir">
+<code class="descname">create_OutputDir</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/eSCAPE/tools/outmesh.html#WriteMesh.create_OutputDir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#eSCAPE.tools.outmesh.WriteMesh.create_OutputDir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a directory to store outputs.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mesher.html" class="btn btn-neutral float-right" title="Mesher" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="eSCAPE’s documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Tristan Salles.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'v.1.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

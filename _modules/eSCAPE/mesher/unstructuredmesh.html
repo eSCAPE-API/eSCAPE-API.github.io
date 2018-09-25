@@ -1,0 +1,692 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>eSCAPE.mesher.unstructuredmesh &mdash; eSCAPE v.1.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> eSCAPE
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tools.html">Input/Output</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mesher.html">Mesher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../flow.html">Landscape evolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../pit.html">Pit filling</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.mesher.html">eSCAPE.mesher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.flow.html">eSCAPE.flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.pit.html">eSCAPE.pit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.tools.html">eSCAPE.tools</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">eSCAPE</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../eSCAPE.html">eSCAPE</a> &raquo;</li>
+        
+      <li>eSCAPE.mesher.unstructuredmesh</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for eSCAPE.mesher.unstructuredmesh</h1><div class="highlight"><pre>
+<span></span><span class="c1">###</span>
+<span class="c1"># Copyright 2017-2018 Tristan Salles</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of eSCAPE.</span>
+<span class="c1">#</span>
+<span class="c1"># eSCAPE is free software: you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU Lesser General Public License as published by</span>
+<span class="c1"># the Free Software Foundation, either version 3 of the License, or any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># eSCAPE is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+<span class="c1"># along with eSCAPE.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="c1">###</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="k">import</span> <span class="n">MPI</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span><span class="nn">petsc4py</span>
+<span class="n">petsc4py</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">petsc4py</span> <span class="k">import</span> <span class="n">PETSc</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">clock</span>
+<span class="kn">import</span> <span class="nn">warnings</span><span class="p">;</span><span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">meshio</span>
+<span class="kn">import</span> <span class="nn">meshplex</span>
+
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">defineTIN</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">meanSlope</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">slpBounds</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">flatBounds</span>
+
+<span class="n">MPIrank</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span>
+<span class="n">MPIsize</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Get_size</span><span class="p">()</span>
+<span class="n">MPIcomm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
+
+<span class="k">try</span><span class="p">:</span> <span class="nb">range</span> <span class="o">=</span> <span class="n">xrange</span>
+<span class="k">except</span><span class="p">:</span> <span class="k">pass</span>
+
+<div class="viewcode-block" id="UnstMesh"><a class="viewcode-back" href="../../../mesher.html#eSCAPE.mesher.unstructuredmesh.UnstMesh">[docs]</a><span class="k">class</span> <span class="nc">UnstMesh</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creating a distributed DMPlex and global vector from it based on triangulated mesh</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">natural2local</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Define mesh attributes on root processor</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mdata</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="s1">&#39;triangle&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mdata</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+            <span class="n">MPIcomm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">cells</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">MPIcomm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">elev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mdata</span><span class="o">.</span><span class="n">point_data</span><span class="p">[</span><span class="n">filename</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cell_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">MPIcomm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+            <span class="n">coord_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">MPIcomm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+            <span class="n">cell_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">coord_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">cells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">cell_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+            <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">coord_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+            <span class="n">elev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">coord_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Reading mesh information (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">))</span>
+
+        <span class="c1"># Create DMPlex</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_create_DMPlex</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cells</span><span class="p">,</span> <span class="n">elev</span><span class="p">)</span>
+
+        <span class="c1"># Define local vertex &amp; cells</span>
+        <span class="n">cStart</span><span class="p">,</span> <span class="n">cEnd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getHeightStratum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># Dealing with triangular cells only</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lcells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">cEnd</span><span class="o">-</span><span class="n">cStart</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">PETSc</span><span class="o">.</span><span class="n">IntType</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cStart</span><span class="p">,</span> <span class="n">cEnd</span><span class="p">):</span>
+            <span class="n">point_closure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getTransitiveClosure</span><span class="p">(</span><span class="n">c</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lcells</span><span class="p">[</span><span class="n">c</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">point_closure</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span><span class="o">-</span><span class="n">cEnd</span>
+        <span class="k">del</span> <span class="n">point_closure</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Defining Petsc DMPlex (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">))</span>
+
+        <span class="c1"># Create mesh structure with meshplex</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="c1"># Define mesh characteristics</span>
+        <span class="n">Tmesh</span> <span class="o">=</span> <span class="n">meshplex</span><span class="o">.</span><span class="n">mesh_tri</span><span class="o">.</span><span class="n">MeshTri</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lcoords</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lcells</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Tmesh</span><span class="o">.</span><span class="n">control_volumes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">boundary</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">localboundIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_boundary</span><span class="p">()</span>
+
+        <span class="c1"># Voronoi and simplices declaration</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">Tmesh</span><span class="o">.</span><span class="n">node_coords</span>
+        <span class="n">Tmesh</span><span class="o">.</span><span class="n">create_edges</span><span class="p">()</span>
+        <span class="n">cc</span> <span class="o">=</span> <span class="n">Tmesh</span><span class="o">.</span><span class="n">cell_circumcenters</span>
+        <span class="n">edges_nodes</span> <span class="o">=</span> <span class="n">Tmesh</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span>
+        <span class="n">cells_nodes</span> <span class="o">=</span> <span class="n">Tmesh</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span>
+        <span class="n">cells_edges</span> <span class="o">=</span> <span class="n">Tmesh</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="s1">&#39;edges&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Voronoi creation (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">))</span>
+
+        <span class="c1"># Tesselation on unstructured mesh</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_ngbNbs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_ngbID</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_edgeLgt</span><span class="p">,</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_voroDist</span> <span class="o">=</span> <span class="n">defineTIN</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">cells_nodes</span><span class="p">,</span> <span class="n">cells_edges</span><span class="p">,</span>
+                                                                        <span class="n">edges_nodes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_area</span><span class="p">,</span> <span class="n">cc</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Tesselation (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bG</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stepED</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vSed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vSedLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diffDep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diffDepLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hOld</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hOldLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">drainArea</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">drainAreaLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="n">areaLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">areaGlobal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="n">areaLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_area</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="n">areaLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">areaGlobal</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">areaGlobal</span><span class="p">,</span> <span class="n">areaLocal</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_Garea</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">areaGlobal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">areaLocal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cumED</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bSlope</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bSlope</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finite volume mesh declaration (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="UnstMesh._naturalNumbering"><a class="viewcode-back" href="../../../mesher.html#eSCAPE.mesher.unstructuredmesh.UnstMesh._naturalNumbering">[docs]</a>    <span class="k">def</span> <span class="nf">_naturalNumbering</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Natural numbering based on DMPlex distribution</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            coords: mesh coordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="k">import</span> <span class="n">cKDTree</span> <span class="k">as</span> <span class="n">_cKDTree</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lcoords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getCoordinatesLocal</span><span class="p">()</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">npoints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lcoords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">MPIsize</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">tree</span> <span class="o">=</span> <span class="n">_cKDTree</span><span class="p">(</span><span class="n">coords</span><span class="p">[:,:</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">distances</span><span class="p">,</span> <span class="n">nat2loc</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lcoords</span><span class="p">[:,:</span><span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">natural2local</span> <span class="o">=</span> <span class="n">nat2loc</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">del</span> <span class="n">tree</span><span class="p">,</span><span class="n">distances</span><span class="p">,</span> <span class="n">nat2loc</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">natural2local</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="UnstMesh._create_DMPlex"><a class="viewcode-back" href="../../../mesher.html#eSCAPE.mesher.unstructuredmesh.UnstMesh._create_DMPlex">[docs]</a>    <span class="k">def</span> <span class="nf">_create_DMPlex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">cells</span><span class="p">,</span> <span class="n">elev</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a PETSc DMPlex object from the mesh attributes</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dim: mesh dimensions</span>
+<span class="sd">            coords: mesh coordinates</span>
+<span class="sd">            cells: cell nodes indices</span>
+<span class="sd">            elev: nodes elevation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">DMPlex</span><span class="p">()</span><span class="o">.</span><span class="n">createFromCellList</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">cells</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">MPIcomm</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Create DMPlex (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="c1"># Create boundary labels</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;boundary&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_DMPlex_boundary_points</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+
+        <span class="c1"># label coarse DM in case it is ever needed again</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">createLabel</span><span class="p">(</span><span class="s2">&quot;coarse&quot;</span><span class="p">)</span>
+        <span class="n">pStart</span><span class="p">,</span> <span class="n">pEnd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getDepthStratum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pStart</span><span class="p">,</span> <span class="n">pEnd</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">setLabelValue</span><span class="p">(</span><span class="s2">&quot;coarse&quot;</span><span class="p">,</span> <span class="n">pt</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Define one DoF on the nodes</span>
+        <span class="n">origSect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">createSection</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">origSect</span><span class="o">.</span><span class="n">setFieldName</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;points&quot;</span><span class="p">)</span>
+        <span class="n">origSect</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">setDefaultSection</span><span class="p">(</span><span class="n">origSect</span><span class="p">)</span>
+        <span class="n">origVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">createGlobalVector</span><span class="p">()</span>
+
+        <span class="c1"># Distribute to other processors if any</span>
+        <span class="k">if</span> <span class="n">MPIsize</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">sf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">distribute</span><span class="p">(</span><span class="n">overlap</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">newSect</span><span class="p">,</span> <span class="n">newVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">distributeField</span><span class="p">(</span><span class="n">sf</span><span class="p">,</span> <span class="n">origSect</span><span class="p">,</span> <span class="n">origVec</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">setDefaultSection</span><span class="p">(</span><span class="n">newSect</span><span class="p">)</span>
+            <span class="n">newSect</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+            <span class="n">newVec</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+            <span class="n">sf</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="n">origVec</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="n">origSect</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">createGlobalVector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">createLocalVector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">getSizes</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">getSizes</span><span class="p">()</span>
+
+        <span class="c1"># Local/Global mapping</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lgmap_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getLGMap</span><span class="p">()</span>
+        <span class="n">l2g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lgmap_row</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">offproc</span> <span class="o">=</span> <span class="n">l2g</span> <span class="o">&lt;</span> <span class="mi">0</span>
+        <span class="n">l2g</span><span class="p">[</span><span class="n">offproc</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">l2g</span><span class="p">[</span><span class="n">offproc</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lgmap_col</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">LGMap</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">l2g</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">MPIcomm</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">l2g</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Distribute DMPlex (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="c1"># Get natural numbering</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">elev</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">elev</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_naturalNumbering</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">elev</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">natural2local</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Distribute field to DMPlex (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="c1"># Forcing event number</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rainNb</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tecNb</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="UnstMesh._get_boundary"><a class="viewcode-back" href="../../../mesher.html#eSCAPE.mesher.unstructuredmesh.UnstMesh._get_boundary">[docs]</a>    <span class="k">def</span> <span class="nf">_get_boundary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;boundary&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find the nodes on the boundary from the DM</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">bmask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">pStart</span><span class="p">,</span> <span class="n">pEnd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getDepthStratum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getNumLabels</span><span class="p">()):</span>
+            <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getLabelName</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;There is no </span><span class="si">{}</span><span class="s2"> label in the DM&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">label</span><span class="p">))</span>
+
+        <span class="n">stratSize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getStratumSize</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">stratSize</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">labelIS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getStratumIS</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">pt_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">labelIS</span><span class="o">.</span><span class="n">indices</span> <span class="o">&gt;=</span> <span class="n">pStart</span><span class="p">,</span> <span class="n">labelIS</span><span class="o">.</span><span class="n">indices</span> <span class="o">&lt;</span> <span class="n">pEnd</span><span class="p">)</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">labelIS</span><span class="o">.</span><span class="n">indices</span><span class="p">[</span><span class="n">pt_range</span><span class="p">]</span> <span class="o">-</span> <span class="n">pStart</span>
+            <span class="n">labelIS</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+
+        <span class="n">bmask</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="n">bmask</span><span class="p">,</span> <span class="n">indices</span></div>
+
+<div class="viewcode-block" id="UnstMesh.applyForces"><a class="viewcode-back" href="../../../mesher.html#eSCAPE.mesher.unstructuredmesh.UnstMesh.applyForces">[docs]</a>    <span class="k">def</span> <span class="nf">applyForces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find the different values for climatic and tectonic forces that will be applied to the</span>
+<span class="sd">        considered time interval</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="c1"># Sea level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sealevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seafunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tNow</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+        <span class="c1"># Climate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateRain</span><span class="p">()</span>
+        <span class="c1"># Tectonic</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateTectonic</span><span class="p">()</span>
+
+        <span class="c1"># Apply boundary forcing for slope and flat conditions</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundCond</span> <span class="o">==</span> <span class="s1">&#39;slope&#39;</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tNow</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span> <span class="p">:</span>
+                <span class="n">hArray</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                <span class="n">bslp</span> <span class="o">=</span> <span class="n">meanSlope</span><span class="p">(</span><span class="n">hArray</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gbounds</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bSlope</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">bslp</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">bslp</span><span class="p">,</span> <span class="n">hArray</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hArray</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                <span class="n">bSlpe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bSlope</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                <span class="n">bElev</span> <span class="o">=</span> <span class="n">slpBounds</span><span class="p">(</span><span class="n">hArray</span><span class="p">,</span> <span class="n">bSlpe</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gbounds</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">bElev</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">bElev</span><span class="p">,</span> <span class="n">hArray</span><span class="p">,</span> <span class="n">bSlpe</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tNow</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundCond</span> <span class="o">==</span> <span class="s1">&#39;flat&#39;</span> <span class="p">:</span>
+            <span class="n">hArray</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+            <span class="n">bElev</span> <span class="o">=</span> <span class="n">flatBounds</span><span class="p">(</span><span class="n">hArray</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gbounds</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">bcelev</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">bElev</span><span class="p">,</span> <span class="n">hArray</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    	<span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Update External Forces (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="UnstMesh._updateRain"><a class="viewcode-back" href="../../../mesher.html#eSCAPE.mesher.unstructuredmesh.UnstMesh._updateRain">[docs]</a>    <span class="k">def</span> <span class="nf">_updateRain</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find the current rain values for the considered time interval</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">raindata</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rainFlag</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">return</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="n">nb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rainNb</span>
+        <span class="k">if</span> <span class="n">nb</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raindata</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">raindata</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">nb</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tNow</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="p">:</span>
+                <span class="n">nb</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">nb</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rainNb</span> <span class="ow">or</span> <span class="n">nb</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">nb</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">nb</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">rainNb</span> <span class="o">=</span> <span class="n">nb</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raindata</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">nb</span><span class="p">,</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">mdata</span> <span class="o">=</span> <span class="n">meshio</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raindata</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">nb</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+                <span class="n">rainArea</span> <span class="o">=</span> <span class="n">mdata</span><span class="o">.</span><span class="n">point_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">raindata</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">nb</span><span class="p">,</span><span class="mi">3</span><span class="p">]]</span>
+                <span class="k">del</span> <span class="n">mdata</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rainArea</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elev</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">raindata</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">nb</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rainArea</span> <span class="o">=</span> <span class="n">rainArea</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">natural2local</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_area</span>
+
+            <span class="k">if</span> <span class="n">rainArea</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rainFlag</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rainFlag</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">localZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="n">seaID</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">localZ</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">sealevel</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">rainArea</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rainArea</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">rainArea</span><span class="p">[</span><span class="n">seaID</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">rainArea</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bL</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">rainArea</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bG</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bG</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bL</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">rainArea</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="UnstMesh._updateTectonic"><a class="viewcode-back" href="../../../mesher.html#eSCAPE.mesher.unstructuredmesh.UnstMesh._updateTectonic">[docs]</a>    <span class="k">def</span> <span class="nf">_updateTectonic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find the current tectonic rates for the considered time interval</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tecdata</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tectonic</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">return</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="n">nb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tecNb</span>
+        <span class="k">if</span> <span class="n">nb</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tecdata</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tecdata</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">nb</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tNow</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="p">:</span>
+                <span class="n">nb</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">nb</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tecNb</span> <span class="ow">or</span> <span class="n">nb</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">nb</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">nb</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">tecNb</span> <span class="o">=</span> <span class="n">nb</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tecdata</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">nb</span><span class="p">,</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">mdata</span> <span class="o">=</span> <span class="n">meshio</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tecdata</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">nb</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+                <span class="n">tectonic</span> <span class="o">=</span> <span class="n">mdata</span><span class="o">.</span><span class="n">ptdata</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tecdata</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">nb</span><span class="p">,</span><span class="mi">3</span><span class="p">]]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tectonic</span> <span class="o">=</span> <span class="n">tectonic</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">natural2local</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
+                <span class="c1"># del mdata,tectonic</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tectonic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elev</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">tecdata</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tecNb</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tectonic</span> <span class="o">=</span> <span class="n">tectonic</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">natural2local</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
+                <span class="k">del</span> <span class="n">tectonic</span>
+                <span class="c1"># Assign null displacements on the domain boundaries</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundCond</span> <span class="o">==</span> <span class="s1">&#39;fixed&#39;</span> <span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tectonic</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="c1"># Update elevation</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tNow</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span><span class="p">:</span>
+            <span class="n">localZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+            <span class="n">localZ</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tectonic</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">localZ</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="UnstMesh._set_DMPlex_boundary_points"><a class="viewcode-back" href="../../../mesher.html#eSCAPE.mesher.unstructuredmesh.UnstMesh._set_DMPlex_boundary_points">[docs]</a>    <span class="k">def</span> <span class="nf">_set_DMPlex_boundary_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Finds the points that join the edges that have been</span>
+<span class="sd">        marked as &quot;boundary&quot; faces in the DAG then sets them</span>
+<span class="sd">        as boundaries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">createLabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">markBoundaryFaces</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+
+        <span class="n">pStart</span><span class="p">,</span> <span class="n">pEnd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getDepthStratum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c1"># points</span>
+        <span class="n">eStart</span><span class="p">,</span> <span class="n">eEnd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getDepthStratum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># edges</span>
+        <span class="n">edgeIS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getStratumIS</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">edgeIS</span> <span class="ow">and</span> <span class="n">eEnd</span> <span class="o">-</span> <span class="n">eStart</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">edge_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">edgeIS</span><span class="o">.</span><span class="n">indices</span> <span class="o">&gt;=</span> <span class="n">eStart</span><span class="p">,</span> <span class="n">edgeIS</span><span class="o">.</span><span class="n">indices</span> <span class="o">&lt;</span> <span class="n">eEnd</span><span class="p">)</span>
+            <span class="n">boundary_edges</span> <span class="o">=</span> <span class="n">edgeIS</span><span class="o">.</span><span class="n">indices</span><span class="p">[</span><span class="n">edge_mask</span><span class="p">]</span>
+
+            <span class="c1"># Query the DAG  (directed acyclic graph) for points that join an edge</span>
+            <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">boundary_edges</span><span class="p">:</span>
+                <span class="n">vertices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getCone</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+                <span class="c1"># mark the boundary points</span>
+                <span class="k">for</span> <span class="n">vertex</span> <span class="ow">in</span> <span class="n">vertices</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">setLabelValue</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">vertex</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">vertices</span>
+
+        <span class="n">edgeIS</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="UnstMesh.destroy_DMPlex"><a class="viewcode-back" href="../../../mesher.html#eSCAPE.mesher.unstructuredmesh.UnstMesh.destroy_DMPlex">[docs]</a>    <span class="k">def</span> <span class="nf">destroy_DMPlex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Destroy PETSc DMPlex objects and associated Petsc local/global Vectors and Matrices.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bL</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bG</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hOld</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hOldLocal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bSlope</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">drainArea</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">drainAreaLocal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vSed</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vSedLocal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stepED</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">areaGlobal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diffDep</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diffDepLocal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pitLocal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pitGlobal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fillGlobal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">watershedGlobal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">watershedLocal</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iMat</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lgmap_col</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lgmap_row</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Cd</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Diff</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">lcoords</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hG0</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vLoc</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+    	<span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Cleaning Model Dataset (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="k">return</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Tristan Salles.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'v.1.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

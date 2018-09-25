@@ -1,0 +1,553 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>eSCAPE.pit.pitfillunst &mdash; eSCAPE v.1.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> eSCAPE
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tools.html">Input/Output</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mesher.html">Mesher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../flow.html">Landscape evolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../pit.html">Pit filling</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.mesher.html">eSCAPE.mesher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.flow.html">eSCAPE.flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.pit.html">eSCAPE.pit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.tools.html">eSCAPE.tools</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">eSCAPE</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../eSCAPE.html">eSCAPE</a> &raquo;</li>
+        
+      <li>eSCAPE.pit.pitfillunst</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for eSCAPE.pit.pitfillunst</h1><div class="highlight"><pre>
+<span></span><span class="c1">###</span>
+<span class="c1"># Copyright 2017-2018 Tristan Salles</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of eSCAPE.</span>
+<span class="c1">#</span>
+<span class="c1"># eSCAPE is free software: you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU Lesser General Public License as published by</span>
+<span class="c1"># the Free Software Foundation, either version 3 of the License, or any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># eSCAPE is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+<span class="c1"># along with eSCAPE.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="c1">###</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="k">import</span> <span class="n">MPI</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span><span class="nn">petsc4py</span>
+<span class="n">petsc4py</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">petsc4py</span> <span class="k">import</span> <span class="n">PETSc</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">clock</span>
+<span class="kn">import</span> <span class="nn">warnings</span><span class="p">;</span><span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">fillit</span> <span class="k">as</span> <span class="nn">fillAlgo</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">fillDepression</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">pitVolume</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">pitHeight</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">addExcess</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">spillPoints</span>
+
+<span class="n">MPIrank</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span>
+<span class="n">MPIsize</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Get_size</span><span class="p">()</span>
+<span class="n">MPIcomm</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span>
+
+<span class="k">try</span><span class="p">:</span> <span class="nb">range</span> <span class="o">=</span> <span class="n">xrange</span>
+<span class="k">except</span><span class="p">:</span> <span class="k">pass</span>
+
+<div class="viewcode-block" id="UnstPit"><a class="viewcode-back" href="../../../pit.html#eSCAPE.pit.pitfillunst.UnstPit">[docs]</a><span class="k">class</span> <span class="nc">UnstPit</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Building the priority flooding algorithm for depression determination</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first</span> <span class="o">=</span> <span class="mi">2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pitData</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fillGlobal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">createGlobalVector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">createLocalVector</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pitGlobal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">createGlobalVector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pitLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">createLocalVector</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">watershedGlobal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">createGlobalVector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">watershedLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">createLocalVector</span><span class="p">()</span>
+
+        <span class="c1"># Construct pit filling algorithm vertex indices</span>
+        <span class="n">vIS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">getVertexNumbering</span><span class="p">()</span>
+
+        <span class="c1"># Local mesh points used in the pit filling algo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idLocal</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">vIS</span><span class="o">.</span><span class="n">indices</span><span class="o">&gt;=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inIDs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inIDs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idLocal</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">masknodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lcells</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idLocal</span><span class="p">)</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">masknodes</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">tmp</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">,</span><span class="n">tmp</span><span class="o">&lt;</span><span class="mi">3</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">masknodes</span><span class="p">[</span><span class="n">out</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">vIS</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="c1"># Local points that will be updated by the neighboring partition</span>
+        <span class="n">idComm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lcells</span><span class="p">[</span><span class="n">out</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">ids</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idComm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idComm</span><span class="p">[</span><span class="n">idComm</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Local points that are part of the global mesh boundary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idLocal</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">localboundIDs</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="n">masknodes</span><span class="p">[</span><span class="n">out</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gbounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gbounds</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Border global ID</span>
+        <span class="n">tmpL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="n">tmpG</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="n">tmpL</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gbounds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="n">tmpL</span><span class="p">,</span> <span class="n">tmpG</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">GIDs</span> <span class="o">=</span>  <span class="n">tmpG</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">boundGIDs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">GIDs</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">GIDs</span>
+        <span class="n">tmpG</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="n">tmpL</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="c1"># Local points that will be used to update watershed spill over points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idLocalComm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lcells</span><span class="p">[</span><span class="n">out</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">ids</span><span class="p">])</span>
+
+        <span class="c1"># Local points that represent the local pit filling mesh boundary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idLBounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">idLocalComm</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Priority-flood algorithm initialisation (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="UnstPit._performZhouAlgo"><a class="viewcode-back" href="../../../pit.html#eSCAPE.pit.pitfillunst.UnstPit._performZhouAlgo">[docs]</a>    <span class="k">def</span> <span class="nf">_performZhouAlgo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform the pit filling algorithm proposed by Zhou et al., 2016 -- (https://github.com/cageo/Zhou-2016)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="n">fillZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">fillZ</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fillGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Perform priority-flood on local domain</span>
+        <span class="n">watershed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">fillZ</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">fillZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">first</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">lcoords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lcoords</span>
+            <span class="n">lcoords</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">fillZ</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">zhouPit</span> <span class="o">=</span> <span class="n">fillAlgo</span><span class="o">.</span><span class="n">depressionFillingZhou</span><span class="p">(</span><span class="n">coords</span><span class="o">=</span><span class="n">lcoords</span><span class="p">,</span> <span class="n">ngbIDs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_ngbID</span><span class="p">,</span>
+                                                                                <span class="n">ngbNb</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_ngbNbs</span><span class="p">,</span> <span class="n">meshIDs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inIDs</span><span class="p">,</span>
+                                                                                <span class="n">boundary</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">idLBounds</span><span class="p">,</span> <span class="n">cartesian</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                                                <span class="n">sealevel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sealevel</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gbounds</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">first</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">lcoords</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">zhouPit</span> <span class="o">=</span> <span class="n">fillAlgo</span><span class="o">.</span><span class="n">depressionFillingZhou</span><span class="p">(</span><span class="n">Z</span><span class="o">=</span><span class="n">fillZ</span><span class="p">,</span> <span class="n">cartesian</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                                                <span class="n">sealevel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sealevel</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">first</span><span class="p">)</span>
+        <span class="n">fillZ</span><span class="p">,</span> <span class="n">locLabel</span><span class="p">,</span> <span class="n">watershed</span><span class="p">,</span> <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zhouPit</span><span class="o">.</span><span class="n">performPitFillingUnstruct</span><span class="p">(</span><span class="n">simple</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Define globally unique watershed index</span>
+        <span class="n">label_offset</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">MPIsize</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">label_offset</span><span class="p">[</span><span class="n">MPIrank</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">graph</span><span class="p">))</span><span class="o">+</span><span class="mi">1</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">IN_PLACE</span><span class="p">,</span> <span class="n">label_offset</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">MAX</span><span class="p">)</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">label_offset</span><span class="p">)</span>
+        <span class="n">watershed</span> <span class="o">+=</span> <span class="n">offset</span><span class="p">[</span><span class="n">MPIrank</span><span class="p">]</span>
+        <span class="n">locLabel</span><span class="p">[</span><span class="n">locLabel</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">offset</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">graph</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">offset</span><span class="p">[</span><span class="n">MPIrank</span><span class="p">]</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">graph</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">graph</span><span class="p">[</span><span class="n">ids</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">offset</span><span class="p">[</span><span class="n">MPIrank</span><span class="p">]</span>
+
+        <span class="c1"># Transfer watershed values along local borders</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">watershedLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">watershed</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">watershedLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">watershedGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">watershedGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">watershedLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">watershed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">watershedLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+
+        <span class="c1"># Transfer filled values along the local borders</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">fillZ</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fillGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">fillZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">first</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">cgraph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zhouPit</span><span class="o">.</span><span class="n">combineUnstructGrids</span><span class="p">(</span><span class="n">fillZ</span><span class="p">,</span> <span class="n">watershed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idLocalComm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idComm</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cgraph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zhouPit</span><span class="o">.</span><span class="n">combineUnstructGrids</span><span class="p">(</span><span class="n">fillZ</span><span class="p">,</span> <span class="n">watershed</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">idLocalComm</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">cgraph</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">graph</span><span class="p">,</span><span class="n">cgraph</span><span class="p">))</span>
+
+        <span class="c1"># Define global spillover graph on master</span>
+        <span class="n">label_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MPIsize</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">label_offset</span><span class="p">[</span><span class="n">MPIrank</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">cgraph</span><span class="p">))</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">IN_PLACE</span><span class="p">,</span> <span class="n">label_offset</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">MAX</span><span class="p">)</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">label_offset</span><span class="p">)</span>
+
+        <span class="n">graph</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">label_offset</span><span class="p">),</span><span class="mi">3</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">graph</span><span class="p">[</span><span class="n">offset</span><span class="p">[</span><span class="n">MPIrank</span><span class="p">]:</span><span class="n">offset</span><span class="p">[</span><span class="n">MPIrank</span><span class="p">]</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">cgraph</span><span class="p">),:]</span> <span class="o">=</span>  <span class="n">cgraph</span>
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mgraph</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">label_offset</span><span class="p">),</span><span class="mi">3</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mgraph</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Reduce</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">mgraph</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">MAX</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Build bidrectional edges connections</span>
+            <span class="n">cgraph</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">mgraph</span><span class="p">,</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">,</span><span class="s1">&#39;target&#39;</span><span class="p">,</span><span class="s1">&#39;weight&#39;</span><span class="p">])</span>
+            <span class="n">cgraph</span> <span class="o">=</span> <span class="n">cgraph</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;weight&#39;</span><span class="p">)</span>
+            <span class="n">cgraph</span> <span class="o">=</span> <span class="n">cgraph</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">([</span><span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="s1">&#39;target&#39;</span><span class="p">],</span> <span class="n">keep</span><span class="o">=</span><span class="s1">&#39;first&#39;</span><span class="p">)</span>
+            <span class="n">c12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">cgraph</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">cgraph</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+            <span class="n">cmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">c12</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)))</span>
+            <span class="c1"># Applying Barnes priority-flood algorithm on the bidirectional graph</span>
+            <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zhouPit</span><span class="o">.</span><span class="n">fillGraph</span><span class="p">(</span><span class="n">cgraph</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">cmax</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">graph</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Send filled graph dataset to each processors and perform pit filling</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">nn</span> <span class="o">=</span> <span class="n">locLabel</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">watershed</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">+</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">z0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="n">fillZ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pitIDs</span> <span class="o">=</span> <span class="n">fillDepression</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z0</span> <span class="p">,</span> <span class="n">fillZ</span><span class="p">,</span> <span class="n">locLabel</span><span class="p">,</span> <span class="n">watershed</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="n">graph</span><span class="p">,</span> <span class="n">nn</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">fillZ</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fillGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">graph</span><span class="p">,</span> <span class="n">cgraph</span><span class="p">,</span> <span class="n">locLabel</span><span class="p">,</span> <span class="n">watershed</span>
+        <span class="k">del</span> <span class="n">fillZ</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">label_offset</span><span class="p">,</span> <span class="n">mgraph</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pit filling algorithm (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="UnstPit._definePitParams"><a class="viewcode-back" href="../../../pit.html#eSCAPE.pit.pitfillunst.UnstPit._definePitParams">[docs]</a>    <span class="k">def</span> <span class="nf">_definePitParams</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Define mesh pit parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+
+        <span class="n">fillZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="n">label_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MPIsize</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">label_offset</span><span class="p">[</span><span class="n">MPIrank</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">pitIDs</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="o">+</span><span class="mi">2</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">IN_PLACE</span><span class="p">,</span> <span class="n">label_offset</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">MAX</span><span class="p">)</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">label_offset</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pitIDs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pitIDs</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">offset</span><span class="p">[</span><span class="n">MPIrank</span><span class="p">]</span>
+        <span class="n">pitVols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">offset</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">equal</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">while</span><span class="p">(</span><span class="ow">not</span> <span class="n">equal</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pitLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitIDs</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pitGlobal</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pitLocal</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pitIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pitLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">pitIDs</span><span class="p">,</span> <span class="n">newVols</span><span class="p">,</span> <span class="n">spillPts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zhouPit</span><span class="o">.</span><span class="n">getPitData_unst</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">z0</span><span class="p">,</span> <span class="n">fillZ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_area</span><span class="p">,</span>
+                                                                                <span class="bp">self</span><span class="o">.</span><span class="n">pitIDs</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">offset</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">IN_PLACE</span><span class="p">,</span> <span class="n">newVols</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">SUM</span><span class="p">)</span>
+
+            <span class="n">spillComb</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">spillComb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([(</span><span class="n">offset</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">MPIsize</span><span class="o">*</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Gather</span><span class="p">(</span><span class="n">spillPts</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">spillComb</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">spillPts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(((</span><span class="n">offset</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">MPIsize</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+                <span class="n">spillPts</span><span class="p">[:,:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">spillComb</span><span class="o">.</span><span class="n">reshape</span><span class="p">(((</span><span class="n">offset</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">MPIsize</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+                <span class="n">pitN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">offset</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">MPIsize</span><span class="p">):</span>
+                    <span class="n">p</span> <span class="o">=</span> <span class="n">k</span><span class="o">*</span><span class="p">(</span><span class="n">offset</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">spillPts</span><span class="p">[</span><span class="n">p</span><span class="p">:</span><span class="n">p</span><span class="o">+</span><span class="n">offset</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">pitN</span>
+                    <span class="n">spillPts</span><span class="p">[</span><span class="n">p</span><span class="p">:</span><span class="n">p</span><span class="o">+</span><span class="n">offset</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+                    <span class="n">spillPts</span><span class="p">[</span><span class="n">p</span><span class="p">:</span><span class="n">p</span><span class="o">+</span><span class="n">offset</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">newVols</span>
+                <span class="n">spill</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">spillPts</span><span class="p">,</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;nid&#39;</span><span class="p">,</span><span class="s1">&#39;z&#39;</span><span class="p">,</span><span class="s1">&#39;pit&#39;</span><span class="p">,</span><span class="s1">&#39;proc&#39;</span><span class="p">,</span><span class="s1">&#39;vol&#39;</span><span class="p">])</span>
+                <span class="n">spill</span> <span class="o">=</span> <span class="n">spill</span><span class="p">[</span><span class="n">spill</span><span class="p">[</span><span class="s1">&#39;nid&#39;</span><span class="p">]</span><span class="o">&gt;-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">spill</span> <span class="o">=</span> <span class="n">spill</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="s1">&#39;pit&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">],</span> <span class="n">ascending</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">])</span>
+                <span class="n">spill</span> <span class="o">=</span> <span class="n">spill</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">([</span><span class="s1">&#39;pit&#39;</span><span class="p">],</span> <span class="n">keep</span><span class="o">=</span><span class="s1">&#39;first&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+                <span class="n">spill</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">spill</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">pitData</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">spill</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">equal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">pitVols</span><span class="p">,</span><span class="n">newVols</span><span class="p">)</span>
+            <span class="n">pitVols</span> <span class="o">=</span> <span class="n">newVols</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">fillZ</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fillGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pitLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitIDs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pitGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pitLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pit parameters definition (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="UnstPit.depressionDefinition"><a class="viewcode-back" href="../../../pit.html#eSCAPE.pit.pitfillunst.UnstPit.depressionDefinition">[docs]</a>    <span class="k">def</span> <span class="nf">depressionDefinition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Main entry point for parallel pit filling computation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_performZhouAlgo</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_definePitParams</span><span class="p">()</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="UnstPit.depositDepression"><a class="viewcode-back" href="../../../pit.html#eSCAPE.pit.pitfillunst.UnstPit.depositDepression">[docs]</a>    <span class="k">def</span> <span class="nf">depositDepression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform pit filling based on eroded sediment volume.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitData</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pitData</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pitData</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="n">elev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="n">fillZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="n">cumed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+
+        <span class="c1"># Find the deposited volume in each depression</span>
+        <span class="n">vol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vSedLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="n">pitDep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">)</span>
+        <span class="n">pitDep</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pitID</span><span class="p">]</span> <span class="o">=</span> <span class="n">vol</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pitID</span><span class="p">]</span>
+
+        <span class="c1"># Remove deposits on the domain boundary</span>
+        <span class="n">pitDep</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="c1"># Compute cumulative deposition on each depression globally</span>
+        <span class="n">depLocal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">)</span>
+        <span class="n">depLocal</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idLocal</span><span class="p">]</span> <span class="o">=</span> <span class="n">pitDep</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idLocal</span><span class="p">]</span>
+        <span class="n">pitID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pitLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="n">pitID</span><span class="p">[</span><span class="n">elev</span><span class="o">&lt;=</span><span class="bp">self</span><span class="o">.</span><span class="n">sealevel</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">nb</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitData</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">pitsedVol</span><span class="p">,</span><span class="n">diffDepLocal</span> <span class="o">=</span> <span class="n">pitVolume</span><span class="p">(</span><span class="n">depLocal</span><span class="p">,</span><span class="n">pitID</span><span class="p">,</span><span class="n">nb</span><span class="p">)</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">IN_PLACE</span><span class="p">,</span> <span class="n">pitsedVol</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">SUM</span><span class="p">)</span>
+        <span class="n">pitVol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pitsedVol</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pitData</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">pitVol</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pitData</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pitData</span><span class="p">[:,</span><span class="mi">4</span><span class="p">]</span>
+
+        <span class="c1"># Get the percentage that will be deposited in each depression</span>
+        <span class="n">newZ</span><span class="p">,</span><span class="n">remainSed</span><span class="p">,</span><span class="n">pitNodes</span> <span class="o">=</span> <span class="n">pitHeight</span><span class="p">(</span><span class="n">elev</span><span class="p">,</span><span class="n">fillZ</span><span class="p">,</span><span class="n">pitID</span><span class="p">,</span><span class="n">pitVol</span><span class="p">,</span><span class="n">pitsedVol</span><span class="p">)</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">IN_PLACE</span><span class="p">,</span> <span class="n">remainSed</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">SUM</span><span class="p">)</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">IN_PLACE</span><span class="p">,</span> <span class="n">pitNodes</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">SUM</span><span class="p">)</span>
+
+        <span class="c1"># Update elevation and cumulative erosion/deposition</span>
+        <span class="n">cumed</span> <span class="o">+=</span> <span class="n">newZ</span><span class="o">-</span><span class="n">elev</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">newZ</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">cumed</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Distribute remaining sediment that will need to be diffused</span>
+        <span class="n">excessSed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">remainSed</span><span class="p">,</span> <span class="n">pitNodes</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">remainSed</span><span class="p">),</span>
+                                    <span class="n">where</span><span class="o">=</span><span class="n">pitNodes</span><span class="o">!=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">addSed</span> <span class="o">=</span> <span class="n">addExcess</span><span class="p">(</span><span class="n">excessSed</span><span class="p">,</span><span class="n">pitID</span><span class="p">)</span>
+
+        <span class="c1"># Add excess sediment volumes on pit&#39;s nodes</span>
+        <span class="n">diffDepLocal</span> <span class="o">+=</span> <span class="n">addSed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diffDepLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">diffDepLocal</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diffDepLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffDep</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diffDep</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">diffDepLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Tristan Salles.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'v.1.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

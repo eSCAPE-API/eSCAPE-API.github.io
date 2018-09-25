@@ -1,0 +1,715 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>eSCAPE.flow.surfprocplex &mdash; eSCAPE v.1.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> eSCAPE
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tools.html">Input/Output</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mesher.html">Mesher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../flow.html">Landscape evolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../pit.html">Pit filling</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.mesher.html">eSCAPE.mesher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.flow.html">eSCAPE.flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.pit.html">eSCAPE.pit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.tools.html">eSCAPE.tools</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">eSCAPE</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../eSCAPE.html">eSCAPE</a> &raquo;</li>
+        
+      <li>eSCAPE.flow.surfprocplex</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for eSCAPE.flow.surfprocplex</h1><div class="highlight"><pre>
+<span></span><span class="c1">###</span>
+<span class="c1"># Copyright 2017-2018 Tristan Salles</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of eSCAPE.</span>
+<span class="c1">#</span>
+<span class="c1"># eSCAPE is free software: you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU Lesser General Public License as published by</span>
+<span class="c1"># the Free Software Foundation, either version 3 of the License, or any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># eSCAPE is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+<span class="c1"># along with eSCAPE.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="c1">###</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="k">import</span> <span class="n">MPI</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">sparse</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span><span class="nn">petsc4py</span>
+<span class="n">petsc4py</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">petsc4py</span> <span class="k">import</span> <span class="n">PETSc</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">clock</span>
+<span class="kn">import</span> <span class="nn">warnings</span><span class="p">;</span><span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">setHillslopeCoeff</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">initDiffCoeff</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">MFDreceivers</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">distributeHeight</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">distributeVolume</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">getMaxEro</span>
+<span class="kn">from</span> <span class="nn">eSCAPE._fortran</span> <span class="k">import</span> <span class="n">getDiffElev</span>
+
+<span class="n">MPIrank</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span>
+<span class="n">MPIsize</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Get_size</span><span class="p">()</span>
+<span class="n">MPIcomm</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span>
+
+<span class="k">try</span><span class="p">:</span> <span class="nb">range</span> <span class="o">=</span> <span class="n">xrange</span>
+<span class="k">except</span><span class="p">:</span> <span class="k">pass</span>
+
+<div class="viewcode-block" id="SPMesh"><a class="viewcode-back" href="../../../flow.html#eSCAPE.flow.surfprocplex.SPMesh">[docs]</a><span class="k">class</span> <span class="nc">SPMesh</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Building the surface processes based on different neighbour conditions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="c1"># KSP solver parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rtol</span> <span class="o">=</span> <span class="mf">1.0e-8</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_ngbNbs</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">IN_PLACE</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">MAX</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxNgbhs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Diffusion matrix construction</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Cd</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="n">diffCoeffs</span> <span class="o">=</span> <span class="n">setHillslopeCoeff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Cd</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_build_diag</span><span class="p">(</span><span class="n">diffCoeffs</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxNgbhs</span><span class="p">):</span>
+                <span class="n">tmpMat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_build</span><span class="p">()</span>
+                <span class="n">indptr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">PETSc</span><span class="o">.</span><span class="n">IntType</span><span class="p">)</span>
+                <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_ngbID</span><span class="p">[:,</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">)</span>
+                <span class="n">ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">indices</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">indices</span><span class="p">[</span><span class="n">ids</span><span class="p">]</span> <span class="o">=</span> <span class="n">ids</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">diffCoeffs</span><span class="p">[:,</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">data</span><span class="o">==</span><span class="mf">0.</span><span class="p">)</span>
+                <span class="n">indices</span><span class="p">[</span><span class="n">ids</span><span class="p">]</span> <span class="o">=</span> <span class="n">ids</span>
+                <span class="n">tmpMat</span><span class="o">.</span><span class="n">assemblyBegin</span><span class="p">()</span>
+                <span class="n">tmpMat</span><span class="o">.</span><span class="n">setValuesLocalCSR</span><span class="p">(</span><span class="n">indptr</span><span class="p">,</span> <span class="n">indices</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">IntType</span><span class="p">),</span> <span class="n">data</span><span class="p">,</span>
+                                                                <span class="n">PETSc</span><span class="o">.</span><span class="n">InsertMode</span><span class="o">.</span><span class="n">INSERT_VALUES</span><span class="p">)</span>
+                <span class="n">tmpMat</span><span class="o">.</span><span class="n">assemblyEnd</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Diff</span> <span class="o">+=</span> <span class="n">tmpMat</span>
+                <span class="n">tmpMat</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="c1"># Identity matrix construction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iMat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_build_diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">))</span>
+
+        <span class="c1"># Sediment pile diffusion coefficients</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">streamKd</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">oceanKd</span><span class="p">,</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">initDiffCoeff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">streamCd</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">oceanCd</span><span class="p">)</span>
+        <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">IN_PLACE</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">MIN</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diffDT</span> <span class="o">=</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">streamKd</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">streamKd</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">diffDT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">oceanKd</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">oceanKd</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">diffDT</span>
+
+        <span class="c1"># Petsc vectors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hG0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hL0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vecG</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vecL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vLoc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">duplicate</span><span class="p">()</span>
+
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="SPMesh._matrix_build"><a class="viewcode-back" href="../../../flow.html#eSCAPE.flow.surfprocplex.SPMesh._matrix_build">[docs]</a>    <span class="k">def</span> <span class="nf">_matrix_build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nnz</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Define PETSC Matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">matrix</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">Mat</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">comm</span><span class="o">=</span><span class="n">MPIcomm</span><span class="p">)</span>
+        <span class="n">matrix</span><span class="o">.</span><span class="n">setType</span><span class="p">(</span><span class="s1">&#39;aij&#39;</span><span class="p">)</span>
+        <span class="n">matrix</span><span class="o">.</span><span class="n">setSizes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
+        <span class="n">matrix</span><span class="o">.</span><span class="n">setLGMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lgmap_row</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lgmap_col</span><span class="p">)</span>
+        <span class="n">matrix</span><span class="o">.</span><span class="n">setFromOptions</span><span class="p">()</span>
+        <span class="n">matrix</span><span class="o">.</span><span class="n">setPreallocationNNZ</span><span class="p">(</span><span class="n">nnz</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">matrix</span></div>
+
+<div class="viewcode-block" id="SPMesh._matrix_build_diag"><a class="viewcode-back" href="../../../flow.html#eSCAPE.flow.surfprocplex.SPMesh._matrix_build_diag">[docs]</a>    <span class="k">def</span> <span class="nf">_matrix_build_diag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">nnz</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Define PETSC Diagonal Matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_build</span><span class="p">()</span>
+
+        <span class="c1"># Define diagonal matrix</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">PETSc</span><span class="o">.</span><span class="n">IntType</span><span class="p">)</span>
+        <span class="n">J</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">PETSc</span><span class="o">.</span><span class="n">IntType</span><span class="p">)</span>
+        <span class="n">matrix</span><span class="o">.</span><span class="n">assemblyBegin</span><span class="p">()</span>
+        <span class="n">matrix</span><span class="o">.</span><span class="n">setValuesLocalCSR</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">InsertMode</span><span class="o">.</span><span class="n">INSERT_VALUES</span><span class="p">)</span>
+        <span class="n">matrix</span><span class="o">.</span><span class="n">assemblyEnd</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">matrix</span></div>
+
+<div class="viewcode-block" id="SPMesh._solve_KSP"><a class="viewcode-back" href="../../../flow.html#eSCAPE.flow.surfprocplex.SPMesh._solve_KSP">[docs]</a>    <span class="k">def</span> <span class="nf">_solve_KSP</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guess</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">vector1</span><span class="p">,</span> <span class="n">vector2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set PETSC KSP solver.</span>
+
+<span class="sd">        Args</span>
+<span class="sd">            guess: Boolean specifying if the iterative KSP solver initial guess is nonzero</span>
+<span class="sd">            matrix: PETSC matrix used by the KSP solver</span>
+<span class="sd">            vector1: PETSC vector corresponding to the initial values</span>
+<span class="sd">            vector2: PETSC vector corresponding to the new values</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            vector2: PETSC vector of the new values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ksp</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">KSP</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">guess</span><span class="p">:</span>
+            <span class="n">ksp</span><span class="o">.</span><span class="n">setInitialGuessNonzero</span><span class="p">(</span><span class="n">guess</span><span class="p">)</span>
+        <span class="n">ksp</span><span class="o">.</span><span class="n">setOperators</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span><span class="n">matrix</span><span class="p">)</span>
+        <span class="n">ksp</span><span class="o">.</span><span class="n">setType</span><span class="p">(</span><span class="s1">&#39;richardson&#39;</span><span class="p">)</span>
+        <span class="n">pc</span> <span class="o">=</span> <span class="n">ksp</span><span class="o">.</span><span class="n">getPC</span><span class="p">()</span>
+        <span class="n">pc</span><span class="o">.</span><span class="n">setType</span><span class="p">(</span><span class="s1">&#39;bjacobi&#39;</span><span class="p">)</span>
+        <span class="n">ksp</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span><span class="n">rtol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rtol</span><span class="p">)</span>
+        <span class="n">ksp</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">vector1</span><span class="p">,</span> <span class="n">vector2</span><span class="p">)</span>
+        <span class="n">ksp</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">vector2</span></div>
+
+<div class="viewcode-block" id="SPMesh._buidFlowDirection"><a class="viewcode-back" href="../../../flow.html#eSCAPE.flow.surfprocplex.SPMesh._buidFlowDirection">[docs]</a>    <span class="k">def</span> <span class="nf">_buidFlowDirection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build multiple flow direction based on neighbouring slopes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">hArrayLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rcvID</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slpRcv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">distRcv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wghtVal</span> <span class="o">=</span> <span class="n">MFDreceivers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flowDir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inIDs</span><span class="p">,</span> <span class="n">hArrayLocal</span><span class="p">)</span>
+        <span class="c1"># Account for pit regions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pitID</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slpRcv</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">&lt;=</span><span class="mf">0.</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rcvID</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pitID</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pitID</span><span class="p">,</span>  <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flowDir</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distRcv</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pitID</span><span class="p">,:]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wghtVal</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pitID</span><span class="p">,:]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="c1"># Account for marine regions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seaID</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">hArrayLocal</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">sealevel</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rcvID</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">seaID</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seaID</span><span class="p">,(</span><span class="bp">self</span><span class="o">.</span><span class="n">flowDir</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distRcv</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">seaID</span><span class="p">,:]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wghtVal</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">seaID</span><span class="p">,:]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="k">del</span> <span class="n">hArrayLocal</span>
+
+    	<span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Flow Direction declaration (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="SPMesh.FlowAccumulation"><a class="viewcode-back" href="../../../flow.html#eSCAPE.flow.surfprocplex.SPMesh.FlowAccumulation">[docs]</a>    <span class="k">def</span> <span class="nf">FlowAccumulation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute multiple flow accumulation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buidFlowDirection</span><span class="p">()</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="c1"># Build drainage area matrix</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rainFlag</span><span class="p">:</span>
+            <span class="n">WAMat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iMat</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flowDir</span><span class="p">):</span>
+                <span class="n">tmpMat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_build</span><span class="p">()</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">wghtVal</span><span class="p">[:,</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">indptr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">PETSc</span><span class="o">.</span><span class="n">IntType</span><span class="p">)</span>
+                <span class="n">nodes</span> <span class="o">=</span> <span class="n">indptr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rcvID</span><span class="p">[:,</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">IntType</span><span class="p">)</span><span class="o">==</span><span class="n">nodes</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">tmpMat</span><span class="o">.</span><span class="n">assemblyBegin</span><span class="p">()</span>
+                <span class="n">tmpMat</span><span class="o">.</span><span class="n">setValuesLocalCSR</span><span class="p">(</span><span class="n">indptr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rcvID</span><span class="p">[:,</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">IntType</span><span class="p">),</span> <span class="n">data</span><span class="p">,</span>
+                                                                <span class="n">PETSc</span><span class="o">.</span><span class="n">InsertMode</span><span class="o">.</span><span class="n">INSERT_VALUES</span><span class="p">)</span>
+                <span class="n">tmpMat</span><span class="o">.</span><span class="n">assemblyEnd</span><span class="p">()</span>
+                <span class="n">WAMat</span> <span class="o">+=</span> <span class="n">tmpMat</span>
+                <span class="n">tmpMat</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+            <span class="c1"># Solve flow accumulation</span>
+            <span class="n">WAtrans</span> <span class="o">=</span> <span class="n">WAMat</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">WAtrans</span> <span class="o">=</span> <span class="n">WAtrans</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bG</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bG</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bL</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tNow</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_solve_KSP</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span><span class="n">WAtrans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bG</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">drainArea</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_solve_KSP</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span><span class="n">WAtrans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bG</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">drainArea</span><span class="p">)</span>
+            <span class="n">WAMat</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+            <span class="n">WAtrans</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">drainArea</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drainArea</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">drainAreaLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Compute Flow Accumulation (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="SPMesh.StreamPowerLaw"><a class="viewcode-back" href="../../../flow.html#eSCAPE.flow.surfprocplex.SPMesh.StreamPowerLaw">[docs]</a>    <span class="k">def</span> <span class="nf">StreamPowerLaw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform stream power law.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="c1"># Get erosion values for considered time step</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">result</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hOld</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hOld</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hOldLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hOldArray</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hOldLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rainFlag</span><span class="p">:</span>
+            <span class="c1"># Define linear solver coefficients</span>
+            <span class="n">Kcoeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">drainAreaLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+            <span class="n">Kcoeff</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">Kcoeff</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">Ke</span>
+            <span class="n">WHMat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iMat</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">flowDir</span><span class="p">):</span>
+                <span class="c1"># Erosion processes computation</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">Kcoeff</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">distRcv</span><span class="p">[:,</span><span class="n">k</span><span class="p">],</span> <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">Kcoeff</span><span class="p">),</span>
+                                            <span class="n">where</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">distRcv</span><span class="p">[:,</span><span class="n">k</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">tmpMat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_build</span><span class="p">()</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">wghtVal</span><span class="p">[:,</span><span class="n">k</span><span class="p">])</span>
+                <span class="n">indptr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">npoints</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">PETSc</span><span class="o">.</span><span class="n">IntType</span><span class="p">)</span>
+                <span class="n">nodes</span> <span class="o">=</span> <span class="n">indptr</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rcvID</span><span class="p">[:,</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">IntType</span><span class="p">)</span><span class="o">==</span><span class="n">nodes</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">tmpMat</span><span class="o">.</span><span class="n">assemblyBegin</span><span class="p">()</span>
+                <span class="n">tmpMat</span><span class="o">.</span><span class="n">setValuesLocalCSR</span><span class="p">(</span><span class="n">indptr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rcvID</span><span class="p">[:,</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">IntType</span><span class="p">),</span> <span class="n">data</span><span class="p">,</span>
+                                                                <span class="n">PETSc</span><span class="o">.</span><span class="n">InsertMode</span><span class="o">.</span><span class="n">INSERT_VALUES</span><span class="p">)</span>
+                <span class="n">tmpMat</span><span class="o">.</span><span class="n">assemblyEnd</span><span class="p">()</span>
+                <span class="n">WHMat</span> <span class="o">+=</span> <span class="n">tmpMat</span>
+                <span class="n">Mdiag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matrix_build_diag</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">WHMat</span> <span class="o">-=</span> <span class="n">Mdiag</span>
+                <span class="n">tmpMat</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+                <span class="n">Mdiag</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+            <span class="c1"># Solve flow accumulation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_solve_KSP</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">WHMat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hOld</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">)</span>
+            <span class="n">WHMat</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stepED</span><span class="o">.</span><span class="n">waxpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">hOld</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">stepED</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Update elevation locally due to aerial erosion</span>
+        <span class="n">hL0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Get sediment load value for given time step</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rainFlag</span><span class="p">:</span>
+            <span class="c1"># Define erosion deposition volume</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stepED</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stepED</span><span class="o">.</span><span class="n">pointwiseMult</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stepED</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">areaGlobal</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tNow</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_solve_KSP</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">WAtrans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stepED</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vSed</span><span class="p">)</span>
+            <span class="k">else</span> <span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_solve_KSP</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">WAtrans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stepED</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vSed</span><span class="p">)</span>
+            <span class="c1"># Solution for sediment load</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">WAtrans</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vSed</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vSed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vSedLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vSedLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vSed</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Update elevation locally due to erosion</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Compute Stream Power Law (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="SPMesh.SedimentDiffusion"><a class="viewcode-back" href="../../../flow.html#eSCAPE.flow.surfprocplex.SPMesh.SedimentDiffusion">[docs]</a>    <span class="k">def</span> <span class="nf">SedimentDiffusion</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialise sediment diffusion from pit and marine deposition.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+
+        <span class="c1"># Deposition in depressions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">depositDepression</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Fill Pit Depression (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">streamCd</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">oceanCd</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_diffuseSediment</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Compute Sediment Diffusion (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="SPMesh._diffusionTimeStep"><a class="viewcode-back" href="../../../flow.html#eSCAPE.flow.surfprocplex.SPMesh._diffusionTimeStep">[docs]</a>    <span class="k">def</span> <span class="nf">_diffusionTimeStep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hArr</span><span class="p">,</span> <span class="n">hG0</span><span class="p">,</span> <span class="n">hL0</span><span class="p">,</span> <span class="n">sFlux</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal loop for marine and aerial diffusion on currently deposited sediments.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            hArr: local PETSC vector for updated elevation values</span>
+<span class="sd">            hG0: global PETSC vector of initial elevation values</span>
+<span class="sd">            hL0: local PETSC vector of initial elevation values</span>
+<span class="sd">            sFlux: global PETSC vector of sediment thickness remaining for diffusion</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">hG0</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">for</span> <span class="n">tStep</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iters</span><span class="p">):</span>
+
+            <span class="c1"># Solve PDE for diffusion system explicitly</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">result</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hOld</span><span class="p">)</span>
+            <span class="n">eroCoeffs</span> <span class="o">=</span> <span class="n">getMaxEro</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sealevel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inIDs</span><span class="p">,</span> <span class="n">hArr</span><span class="p">,</span> <span class="n">hL0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">streamKd</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">oceanKd</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vLoc</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">eroCoeffs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vLoc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vLoc</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">eroCoeffs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vLoc</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+            <span class="n">dh</span> <span class="o">=</span> <span class="n">getDiffElev</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">sealevel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inIDs</span><span class="p">,</span> <span class="n">hArr</span><span class="p">,</span> <span class="n">eroCoeffs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">streamKd</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">oceanKd</span><span class="p">)</span>
+            <span class="n">hArr</span> <span class="o">+=</span> <span class="n">dh</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+             <span class="c1"># Remove portion of boundary deposits</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">result</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">hOld</span><span class="p">)</span>
+            <span class="n">tmpArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">tmpArr</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">boundGIDs</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">tmpArr</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="o">.</span><span class="n">pointwiseMult</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="p">)</span>
+
+            <span class="c1"># Update elevation vectors</span>
+            <span class="k">if</span> <span class="n">tStep</span> <span class="o">&lt;</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iters</span><span class="o">*</span><span class="mf">0.5</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">tmpArr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                <span class="n">tmpArr</span> <span class="o">+=</span> <span class="n">sFlux</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># Update upper layer fraction</span>
+            <span class="n">hArr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+
+        <span class="c1"># Cleaning</span>
+        <span class="k">del</span> <span class="n">eroCoeffs</span><span class="p">,</span> <span class="n">tmpArr</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="SPMesh._diffuseSediment"><a class="viewcode-back" href="../../../flow.html#eSCAPE.flow.surfprocplex.SPMesh._diffuseSediment">[docs]</a>    <span class="k">def</span> <span class="nf">_diffuseSediment</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Entry point for marine and aerial diffusion on currently deposited sediments.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Constant local &amp; global vectors/arrays</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">result</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hG0</span><span class="p">)</span>
+        <span class="n">hG0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hG0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">hL0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Get sediment volume in the marine environment</span>
+        <span class="n">vSed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vSedLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">hL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">vSea</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">vSed</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">vSea</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">seaID</span><span class="p">]</span> <span class="o">=</span> <span class="n">vSed</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">seaID</span><span class="p">]</span>
+        <span class="n">vSea</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="c1"># Add inland sediment volume to diffuse</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vLoc</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">vSea</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vLoc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">splitNb</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">diffDep</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">splitNb</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vLoc</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">vSed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vLoc</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">inFlux</span> <span class="o">=</span> <span class="n">vSed</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">it2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">it2</span> <span class="o">&lt;</span> <span class="n">splitNb</span><span class="p">:</span>
+            <span class="n">it</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">it</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxIters</span><span class="p">:</span>
+                <span class="n">nhL</span><span class="p">,</span><span class="n">nvSed</span> <span class="o">=</span> <span class="n">distributeHeight</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inIDs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sealevel</span><span class="p">,</span> <span class="n">hL</span><span class="p">,</span> <span class="n">hL0</span><span class="p">,</span> <span class="n">vSed</span><span class="p">)</span>
+                <span class="c1"># Update local elevation globally</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">nhL</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">hL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">nvSed</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">vSed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">vSed</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+                <span class="c1"># Update sediment to distribute</span>
+                <span class="n">nvSed</span> <span class="o">=</span> <span class="n">distributeVolume</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inIDs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sealevel</span><span class="p">,</span> <span class="n">hL</span><span class="p">,</span> <span class="n">hL0</span><span class="p">,</span> <span class="n">vSed</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">nvSed</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">vSed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">vSed</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="o">.</span><span class="n">pointwiseDivide</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">areaGlobal</span><span class="p">)</span>
+                <span class="n">hmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="o">.</span><span class="n">max</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">hmax</span> <span class="o">&lt;=</span> <span class="mf">0.1</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">it</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">it2</span> <span class="o">&lt;</span> <span class="n">splitNb</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">vSed</span> <span class="o">+=</span> <span class="n">inFlux</span>
+            <span class="n">it2</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">vTot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">hL</span><span class="o">-</span><span class="n">hL0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">FVmesh_area</span><span class="p">)</span>
+        <span class="n">vTot</span> <span class="o">+=</span> <span class="n">vSed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vLoc</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">vTot</span><span class="p">)</span>
+
+        <span class="c1"># Get the height to diffuse in the aerial domain</span>
+        <span class="n">nhL</span> <span class="o">=</span> <span class="n">hL</span><span class="o">-</span><span class="n">hL0</span>
+        <span class="n">nhL</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">seaID</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">nhL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vecL</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iters</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vecG</span><span class="o">.</span><span class="n">max</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">del</span> <span class="n">vTot</span><span class="p">,</span> <span class="n">vSed</span><span class="p">,</span> <span class="n">hL</span><span class="p">,</span> <span class="n">nvSed</span><span class="p">,</span> <span class="n">nhL</span><span class="p">,</span> <span class="n">inFlux</span>
+
+        <span class="c1"># From volume to sediment thickness to distribute at each interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vLoc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="o">.</span><span class="n">pointwiseDivide</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">areaGlobal</span><span class="p">)</span>
+
+        <span class="c1"># Distribute sediment downstream to speed up the diffusion algorithm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iters</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iters</span><span class="o">*</span><span class="mf">2.0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iters</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxIters</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">iters</span><span class="p">)</span>
+        <span class="n">cumdt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iters</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">diffDT</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iters</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">diffDT</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">iters</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">diffDT</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iters</span><span class="p">))</span>
+        <span class="n">sFlux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Prepare arrays</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">hG0</span><span class="o">+</span><span class="n">sFlux</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">hArr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+
+        <span class="c1"># Nothing to diffuse...</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vGlob</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="mf">0.</span> <span class="p">:</span>
+            <span class="k">del</span> <span class="n">hArr</span><span class="p">,</span><span class="n">hL0</span><span class="p">,</span><span class="n">hG0</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Solve temporal diffusion equation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_diffusionTimeStep</span><span class="p">(</span><span class="n">hArr</span><span class="p">,</span> <span class="n">hG0</span><span class="p">,</span> <span class="n">hL0</span><span class="p">,</span> <span class="n">sFlux</span><span class="p">)</span>
+
+        <span class="c1"># Cleaning</span>
+        <span class="k">del</span> <span class="n">hArr</span><span class="p">,</span><span class="n">sFlux</span>
+        <span class="k">del</span> <span class="n">hG0</span><span class="p">,</span><span class="n">hL0</span>
+
+        <span class="c1"># Update erosion/deposition local/global vectors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stepED</span><span class="o">.</span><span class="n">waxpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">hG0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">stepED</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="SPMesh.HillSlope"><a class="viewcode-back" href="../../../flow.html#eSCAPE.flow.surfprocplex.SPMesh.HillSlope">[docs]</a>    <span class="k">def</span> <span class="nf">HillSlope</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform hillslope diffusion.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Cd</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="c1"># Get erosion values for considered time step</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">result</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hOld</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_solve_KSP</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Diff</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hOld</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">)</span>
+
+            <span class="c1"># Update cumulative erosion/deposition and elevation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stepED</span><span class="o">.</span><span class="n">waxpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">hOld</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">stepED</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cumEDLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cumED</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Remove erosion/deposition on boundary nodes</span>
+        <span class="n">hArray</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="n">hArray</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hOldArray</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idGBounds</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">hArray</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hLocal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hGlobal</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Compute Hillslope Processes (</span><span class="si">%0.02f</span><span class="s1"> seconds)&#39;</span><span class="o">%</span> <span class="p">(</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span>
+
+        <span class="k">return</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Tristan Salles.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'v.1.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

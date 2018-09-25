@@ -1,0 +1,692 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>eSCAPE.tools.inputparser &mdash; eSCAPE v.1.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> eSCAPE
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tools.html">Input/Output</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mesher.html">Mesher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../flow.html">Landscape evolution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../pit.html">Pit filling</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.mesher.html">eSCAPE.mesher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.flow.html">eSCAPE.flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.pit.html">eSCAPE.pit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/eSCAPE.tools.html">eSCAPE.tools</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">eSCAPE</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../eSCAPE.html">eSCAPE</a> &raquo;</li>
+        
+      <li>eSCAPE.tools.inputparser</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for eSCAPE.tools.inputparser</h1><div class="highlight"><pre>
+<span></span><span class="c1">###</span>
+<span class="c1"># Copyright 2017-2018 Tristan Salles</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of eSCAPE.</span>
+<span class="c1">#</span>
+<span class="c1"># eSCAPE is free software: you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU Lesser General Public License as published by</span>
+<span class="c1"># the Free Software Foundation, either version 3 of the License, or any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># eSCAPE is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+<span class="c1"># along with eSCAPE.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="c1">###</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="k">import</span> <span class="n">MPI</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span><span class="nn">petsc4py</span>
+<span class="n">petsc4py</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">petsc4py</span> <span class="k">import</span> <span class="n">PETSc</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">clock</span>
+<span class="kn">import</span> <span class="nn">warnings</span><span class="p">;</span><span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">ruamel.yaml</span> <span class="k">as</span> <span class="nn">yaml</span>
+<span class="kn">import</span> <span class="nn">meshio</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="k">import</span> <span class="n">itemgetter</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="k">import</span> <span class="n">interp1d</span>
+
+<span class="n">MPIrank</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span>
+<span class="n">MPIsize</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Get_size</span><span class="p">()</span>
+<span class="n">MPIcomm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
+
+<span class="k">try</span><span class="p">:</span> <span class="nb">range</span> <span class="o">=</span> <span class="n">xrange</span>
+<span class="k">except</span><span class="p">:</span> <span class="k">pass</span>
+
+<span class="n">bc_types</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;flat&#39;</span>  <span class="p">:</span> <span class="s1">&#39;flat&#39;</span><span class="p">,</span>  <span class="s1">&#39;fixed&#39;</span> <span class="p">:</span> <span class="s1">&#39;fixed&#39;</span><span class="p">,</span> <span class="s1">&#39;slope&#39;</span> <span class="p">:</span> <span class="s1">&#39;slope&#39;</span><span class="p">}</span>
+
+<div class="viewcode-block" id="ReadYaml"><a class="viewcode-back" href="../../../tools.html#eSCAPE.tools.inputparser.ReadYaml">[docs]</a><span class="k">class</span> <span class="nc">ReadYaml</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parsing YAML input file</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filename: input filename (.yml YAML file)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+
+        <span class="c1"># Check input file exists</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">finput</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to open file: &quot;</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;The input file is not found...&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Open YAML file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">finput</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">finput</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">MPIrank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="s1">&#39;name&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The following model will be run:     </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]))</span>
+
+        <span class="c1"># Read simulation parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_readDomain</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_readTime</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_readSealevel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_readSPL</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_readHillslope</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_readOut</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_readRain</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_readTectonic</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tNow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">saveTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tNow</span>
+
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="ReadYaml._readDomain"><a class="viewcode-back" href="../../../tools.html#eSCAPE.tools.inputparser.ReadYaml._readDomain">[docs]</a>    <span class="k">def</span> <span class="nf">_readDomain</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read domain definition, boundary conditions and flow direction parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">domainDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;domain&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Key &#39;domain&#39; is required and is missing in the input file!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Key domain is required in the input file!&#39;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">boundCond</span> <span class="o">=</span> <span class="n">domainDict</span><span class="p">[</span><span class="s1">&#39;bc&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">boundCond</span> <span class="o">=</span> <span class="s1">&#39;slope&#39;</span>
+
+        <span class="k">if</span> <span class="n">boundCond</span> <span class="ow">in</span> <span class="n">bc_types</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">boundCond</span> <span class="o">=</span> <span class="n">bc_types</span><span class="p">[</span><span class="n">boundCond</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Boundary condition type </span><span class="si">{:s}</span><span class="s2"> unknown</span><span class="se">\n\</span>
+<span class="s2">                Known types: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">boundCond</span><span class="p">,</span> <span class="n">bc_types</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">flowDir</span> <span class="o">=</span> <span class="n">domainDict</span><span class="p">[</span><span class="s1">&#39;flowdir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">flowDir</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">meshFile</span> <span class="o">=</span> <span class="n">domainDict</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Key &#39;filename&#39; is required and is missing in the &#39;domain&#39; declaration!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Mesh file definition is not defined!&#39;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">meshFile</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">as</span> <span class="n">meshfile</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to open file: &quot;</span><span class="p">,</span><span class="n">meshFile</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;The mesh file is not found...&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">meshFile</span> <span class="o">=</span> <span class="n">meshFile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mdata</span> <span class="o">=</span> <span class="n">meshio</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">meshFile</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">elev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mdata</span><span class="o">.</span><span class="n">point_data</span><span class="p">[</span><span class="n">meshFile</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Field name </span><span class="si">{}</span><span class="s2"> is missing from mesh file </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">meshFile</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">meshFile</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The following fields are available: &quot;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">mdata</span><span class="o">.</span><span class="n">point_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Check your mesh file fields definition...&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Field name for elevation is not defined correctly or does not exist!&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ReadYaml._readTime"><a class="viewcode-back" href="../../../tools.html#eSCAPE.tools.inputparser.ReadYaml._readTime">[docs]</a>    <span class="k">def</span> <span class="nf">_readTime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read simulation time declaration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">timeDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Key &#39;time&#39; is required and is missing in the input file!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Key time is required in the input file!&#39;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span> <span class="o">=</span> <span class="n">timeDict</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Key &#39;start&#39; is required and is missing in the &#39;time&#39; declaration!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Simulation start time needs to be declared.&#39;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tEnd</span> <span class="o">=</span> <span class="n">timeDict</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Key &#39;end&#39; is required and is missing in the &#39;time&#39; declaration!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Simulation end time needs to be declared.&#39;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">timeDict</span><span class="p">[</span><span class="s1">&#39;dt&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Key &#39;dt&#39; is required and is missing in the &#39;time&#39; declaration!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Simulation discretisation time step needs to be declared.&#39;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tout</span> <span class="o">=</span> <span class="n">timeDict</span><span class="p">[</span><span class="s1">&#39;tout&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tEnd</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">tStart</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Output time interval &#39;tout&#39; has been set to </span><span class="si">{}</span><span class="s2"> years&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tout</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tEnd</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Simulation end/start times do not make any sense!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tout</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Output time interval was changed to </span><span class="si">{}</span><span class="s2"> years to match the time step dt&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ReadYaml._readSealevel"><a class="viewcode-back" href="../../../tools.html#eSCAPE.tools.inputparser.ReadYaml._readSealevel">[docs]</a>    <span class="k">def</span> <span class="nf">_readSealevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Define sealevel evolution.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">seafile</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">seafunction</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seafunction</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">seaDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;sea&#39;</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">sealevel</span> <span class="o">=</span> <span class="n">seaDict</span><span class="p">[</span><span class="s1">&#39;position&#39;</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">seafile</span> <span class="o">=</span> <span class="n">seaDict</span><span class="p">[</span><span class="s1">&#39;curve&#39;</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="n">seafile</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">seafile</span> <span class="o">=</span> <span class="n">seaDict</span><span class="p">[</span><span class="s1">&#39;curve&#39;</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="n">seafile</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">sealevel</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="k">if</span> <span class="n">seafile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">seafile</span><span class="p">)</span> <span class="k">as</span> <span class="n">fsea</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">seadata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">seafile</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;c&#39;</span><span class="p">,</span>
+                                                  <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">na_filter</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                  <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                        <span class="k">pass</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">seadata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">seafile</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;\s+&#39;</span><span class="p">,</span>
+                                                      <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                      <span class="n">na_filter</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">,</span>
+                                                      <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                            <span class="k">pass</span>
+                        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The sea-level file is not well formed: it should be comma or tab separated&quot;</span><span class="p">)</span>
+                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Wrong formating of sea-level file.&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to open file: &quot;</span><span class="p">,</span><span class="n">seafile</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;The sealevel file is not found...&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">seadata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span><span class="p">:</span>
+                <span class="n">tmpS</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">tmpS</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="n">seadata</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]})</span>
+                <span class="n">seadata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tmpS</span><span class="p">),</span> <span class="n">seadata</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">seadata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tEnd</span><span class="p">:</span>
+                <span class="n">tmpE</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">tmpE</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tEnd</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="n">seadata</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]})</span>
+                <span class="n">seadata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">seadata</span><span class="p">,</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tmpE</span><span class="p">)],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seafunction</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">seadata</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">seadata</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">sealevel</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">year</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tStart</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tEnd</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">seaval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">year</span><span class="p">),</span><span class="n">sealevel</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seafunction</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">seaval</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ReadYaml._readSPL"><a class="viewcode-back" href="../../../tools.html#eSCAPE.tools.inputparser.ReadYaml._readSPL">[docs]</a>    <span class="k">def</span> <span class="nf">_readSPL</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read stream power law parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">splDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;spl&#39;</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="n">splDict</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="mf">0.5</span>
+                <span class="c1"># print(&quot;When using the Stream Power Law definition of coefficient m is required.&quot;)</span>
+                <span class="c1"># raise ValueError(&#39;Stream Power Law: m coefficient not found.&#39;)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">splDict</span><span class="p">[</span><span class="s1">&#39;n&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="c1"># print(&quot;When using the Stream Power Law definition of coefficient n is required.&quot;)</span>
+                <span class="c1"># raise ValueError(&#39;Stream Power Law: n coefficient not found.&#39;)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Ke</span> <span class="o">=</span> <span class="n">splDict</span><span class="p">[</span><span class="s1">&#39;Ke&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;When using the Stream Power Law definition of coefficient Ke is required.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Stream Power Law: Ke coefficient not found.&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="mf">0.5</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Ke</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ReadYaml._readHillslope"><a class="viewcode-back" href="../../../tools.html#eSCAPE.tools.inputparser.ReadYaml._readHillslope">[docs]</a>    <span class="k">def</span> <span class="nf">_readHillslope</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read hillslope parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">hillDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;diffusion&#39;</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Cd</span> <span class="o">=</span> <span class="n">hillDict</span><span class="p">[</span><span class="s1">&#39;hillslopeK&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;When declaring diffusion processes, the coefficient hillslopeK is required.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Hillslope: Cd coefficient not found.&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">streamCd</span> <span class="o">=</span> <span class="n">hillDict</span><span class="p">[</span><span class="s1">&#39;streamK&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">streamCd</span> <span class="o">=</span> <span class="mf">100.</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">oceanCd</span> <span class="o">=</span> <span class="n">hillDict</span><span class="p">[</span><span class="s1">&#39;oceanK&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">oceanCd</span> <span class="o">=</span> <span class="mf">50.</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">maxIters</span> <span class="o">=</span> <span class="n">hillDict</span><span class="p">[</span><span class="s1">&#39;maxIT&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">maxIters</span> <span class="o">=</span> <span class="mi">500</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Cd</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">streamCd</span> <span class="o">=</span> <span class="mf">100.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">oceanCd</span> <span class="o">=</span> <span class="mf">50.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">maxIters</span> <span class="o">=</span> <span class="mi">500</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ReadYaml._readOut"><a class="viewcode-back" href="../../../tools.html#eSCAPE.tools.inputparser.ReadYaml._readOut">[docs]</a>    <span class="k">def</span> <span class="nf">_readOut</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse output directory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">outDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;output&#39;</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">outputDir</span> <span class="o">=</span> <span class="n">outDict</span><span class="p">[</span><span class="s1">&#39;dir&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">outputDir</span> <span class="o">=</span> <span class="s1">&#39;output&#39;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">makedir</span> <span class="o">=</span> <span class="n">outDict</span><span class="p">[</span><span class="s1">&#39;makedir&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">makedir</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputDir</span> <span class="o">=</span> <span class="s1">&#39;output&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">makedir</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ReadYaml._readRain"><a class="viewcode-back" href="../../../tools.html#eSCAPE.tools.inputparser.ReadYaml._readRain">[docs]</a>    <span class="k">def</span> <span class="nf">_readRain</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse rain forcing conditions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">rainDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;climate&#39;</span><span class="p">]</span>
+            <span class="n">rainSort</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">rainDict</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rainSort</span><span class="p">)):</span>
+                <span class="n">rStart</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">rUniform</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">rMap</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">rStart</span> <span class="o">=</span> <span class="n">rainSort</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;For each climate event a start time is required.&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Climate event </span><span class="si">{}</span><span class="s1"> has no parameter start&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">rUniform</span> <span class="o">=</span> <span class="n">rainSort</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;uniform&#39;</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">rMap</span> <span class="o">=</span> <span class="n">rainSort</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;map&#39;</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+                <span class="k">if</span> <span class="n">rMap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshFile</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">rMap</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">rMap</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">as</span> <span class="n">rainfile</span><span class="p">:</span>
+                                <span class="k">pass</span>
+                        <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to open rain file: &quot;</span><span class="p">,</span><span class="n">rMap</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;The rain file </span><span class="si">{}</span><span class="s1"> is not found for climatic event </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rMap</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">k</span><span class="p">))</span>
+
+                        <span class="n">mdata</span> <span class="o">=</span> <span class="n">meshio</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">rMap</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                        <span class="n">rainSet</span> <span class="o">=</span> <span class="n">mdata</span><span class="o">.</span><span class="n">point_data</span>
+                        <span class="c1"># del mdata</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">rainSet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mdata</span><span class="o">.</span><span class="n">point_data</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">rainKey</span> <span class="o">=</span> <span class="n">rainSet</span><span class="p">[</span><span class="n">rMap</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Field name </span><span class="si">{}</span><span class="s2"> is missing from rain file </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rMap</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">rMap</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The following fields are available: &quot;</span><span class="p">,</span><span class="n">rainSet</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Check your rain file fields definition...&quot;</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Field name for rainfall is not defined correctly or does not exist!&#39;</span><span class="p">)</span>
+
+
+                <span class="k">if</span> <span class="n">rMap</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">rUniform</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;For each climate event a rainfall value (uniform) or a rainfall grid (map) is required.&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Climate event </span><span class="si">{}</span><span class="s1"> has no rainfall value (uniform) or a rainfall map (map).&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+
+                <span class="n">tmpRain</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">if</span> <span class="n">rMap</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">tmpRain</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;start&#39;</span><span class="p">:</span> <span class="n">rStart</span><span class="p">,</span> <span class="s1">&#39;rUni&#39;</span><span class="p">:</span> <span class="n">rUniform</span><span class="p">,</span> <span class="s1">&#39;rMap&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;rKey&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">})</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tmpRain</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;start&#39;</span><span class="p">:</span> <span class="n">rStart</span><span class="p">,</span> <span class="s1">&#39;rUni&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;rMap&#39;</span><span class="p">:</span> <span class="n">rMap</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;rKey&#39;</span><span class="p">:</span> <span class="n">rMap</span><span class="p">[</span><span class="mi">1</span><span class="p">]})</span>
+
+                <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">raindata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tmpRain</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;rUni&#39;</span><span class="p">,</span> <span class="s1">&#39;rMap&#39;</span><span class="p">,</span> <span class="s1">&#39;rKey&#39;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">raindata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">raindata</span><span class="p">,</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tmpRain</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;rUni&#39;</span><span class="p">,</span> <span class="s1">&#39;rMap&#39;</span><span class="p">,</span> <span class="s1">&#39;rKey&#39;</span><span class="p">])],</span>
+                                                         <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">raindata</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span><span class="p">:</span>
+                <span class="n">tmpRain</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">tmpRain</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;start&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span><span class="p">,</span> <span class="s1">&#39;rUni&#39;</span><span class="p">:</span> <span class="mf">0.</span><span class="p">,</span> <span class="s1">&#39;rMap&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;rKey&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">})</span>
+                <span class="n">raindata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tmpRain</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;rUni&#39;</span><span class="p">,</span> <span class="s1">&#39;rMap&#39;</span><span class="p">,</span> <span class="s1">&#39;rKey&#39;</span><span class="p">]),</span><span class="n">raindata</span><span class="p">],</span>
+                                                                              <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">raindata</span> <span class="o">=</span> <span class="n">raindata</span>
+
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">raindata</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">pass</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ReadYaml._readTectonic"><a class="viewcode-back" href="../../../tools.html#eSCAPE.tools.inputparser.ReadYaml._readTectonic">[docs]</a>    <span class="k">def</span> <span class="nf">_readTectonic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse tectonic forcing conditions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tecDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="s1">&#39;tectonic&#39;</span><span class="p">]</span>
+            <span class="n">tecSort</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">tecDict</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="s1">&#39;start&#39;</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tecSort</span><span class="p">)):</span>
+                <span class="n">tecStart</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">tMap</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">tUniform</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">tecStart</span> <span class="o">=</span> <span class="n">tecSort</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;start&#39;</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;For each tectonic event a start time is required.&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Tectonic event </span><span class="si">{}</span><span class="s1"> has no parameter start&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">tUniform</span> <span class="o">=</span> <span class="n">tecSort</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;uniform&#39;</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">tMap</span> <span class="o">=</span> <span class="n">tecSort</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;map&#39;</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                    <span class="c1"># print(&quot;For each tectonic event a map is required.&quot;)</span>
+                    <span class="c1"># raise ValueError(&#39;Tectonic event {} has no parameter map&#39;.format(k))</span>
+
+                <span class="k">if</span> <span class="n">tMap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshFile</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">tMap</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tMap</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">as</span> <span class="n">tecfile</span><span class="p">:</span>
+                                <span class="k">pass</span>
+                        <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to open tectonic file: &quot;</span><span class="p">,</span><span class="n">tMap</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;The tectonic file </span><span class="si">{}</span><span class="s1"> is not found for climatic event </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tMap</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">k</span><span class="p">))</span>
+
+                        <span class="n">mdata</span> <span class="o">=</span> <span class="n">meshio</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">tMap</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                        <span class="n">tecSet</span> <span class="o">=</span> <span class="n">mdata</span><span class="o">.</span><span class="n">point_data</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">tecSet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mdata</span><span class="o">.</span><span class="n">point_data</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">tecKey</span> <span class="o">=</span> <span class="n">tecSet</span><span class="p">[</span><span class="n">tMap</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Field name </span><span class="si">{}</span><span class="s2"> is missing from tectonic file </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tMap</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">tMap</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The following fields are available: &quot;</span><span class="p">,</span><span class="n">tecSet</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Check your tectonic file fields definition...&quot;</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Field name for tectonics is not defined correctly or does not exist!&#39;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">tMap</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">tUniform</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;For each tectonic event a tectonic value (uniform) or a tectonic grid (map) is required.&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Tectonic event </span><span class="si">{}</span><span class="s1"> has no tectonic value (uniform) or a tectonic map (map).&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+
+                <span class="n">tmpTec</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">if</span> <span class="n">tMap</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">tmpTec</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;start&#39;</span><span class="p">:</span> <span class="n">tecStart</span><span class="p">,</span> <span class="s1">&#39;tUni&#39;</span><span class="p">:</span> <span class="n">tUniform</span><span class="p">,</span> <span class="s1">&#39;tMap&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;tKey&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">})</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tmpTec</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;start&#39;</span><span class="p">:</span> <span class="n">tecStart</span><span class="p">,</span> <span class="s1">&#39;tUni&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;tMap&#39;</span><span class="p">:</span> <span class="n">tMap</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;tKey&#39;</span><span class="p">:</span> <span class="n">tMap</span><span class="p">[</span><span class="mi">1</span><span class="p">]})</span>
+
+                <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">tecdata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tmpTec</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;tUni&#39;</span><span class="p">,</span> <span class="s1">&#39;tMap&#39;</span><span class="p">,</span> <span class="s1">&#39;tKey&#39;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tecdata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">tecdata</span><span class="p">,</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tmpTec</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;tUni&#39;</span><span class="p">,</span> <span class="s1">&#39;tMap&#39;</span><span class="p">,</span> <span class="s1">&#39;tKey&#39;</span><span class="p">])],</span>
+                                                       <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">tecdata</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span><span class="p">:</span>
+                <span class="n">tmpTec</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">tmpTec</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;start&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tStart</span><span class="p">,</span> <span class="s1">&#39;tUni&#39;</span><span class="p">:</span> <span class="mf">0.</span><span class="p">,</span> <span class="s1">&#39;tMap&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;tKey&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">})</span>
+                <span class="n">tecdata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">tmpTec</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;start&#39;</span><span class="p">,</span> <span class="s1">&#39;tUni&#39;</span><span class="p">,</span> <span class="s1">&#39;tMap&#39;</span><span class="p">,</span> <span class="s1">&#39;tKey&#39;</span><span class="p">]),</span><span class="n">tecdata</span><span class="p">],</span>
+                                                   <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tecdata</span> <span class="o">=</span> <span class="n">tecdata</span>
+
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tecdata</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">pass</span>
+
+        <span class="k">return</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Tristan Salles.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'v.1.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
