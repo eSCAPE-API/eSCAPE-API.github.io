@@ -1,14 +1,15 @@
 # eSCAPE-API
 
-
 API documentation for [**eSCAPE**](https://escape-model.github.io/)
 
 + Local build:
 
 ```bash
-cd eSCAPE
-python setup.py install
-cd doc 
+pip install sphinx
+pip install sphinx_rtd_theme
+cd eSCAPE/doc 
+cd ..; python setup.py install; cd doc
+make clean
 make html
 ```
 
